@@ -1,0 +1,12 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Run demo_go_to_goal",
+      "type": "python",
+      "request": "launch",
+      "program": "${workspaceFolder}/examples/demo_go_to_goal.py",
+      "cwd": "${workspaceFolder}"
+    }
+  ]
+}

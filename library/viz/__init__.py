@@ -1,1 +1,0 @@
-# RoboSimKit visualization package

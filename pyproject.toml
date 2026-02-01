@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "robosimkit"
+version = "0.1.0"
+description = "Lightweight simulator for learning robotics"
+readme = "README.md"
+requires-python = ">=3.8"
+authors = [
+  { name = "Muhamad Fikri", email = "muhamad.fikri@tuni.fi" }
+]
+dependencies = [
+  "numpy",
+  "matplotlib",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["examples*", "models*", "visualization*"]
