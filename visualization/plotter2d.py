@@ -66,14 +66,14 @@ class MobileRobotPlotter2D:
       def update_time_stamp(self, t):
             self.time_txt.set_text(f"t = {t:.1f} s")
 
-      def update_trajectory(self, state_hist):
+      def update_trajectory(self, state_hist, control=None):
             px = state_hist[:, 0]
             py = state_hist[:, 1]
             state = state_hist[-1]
 
             self.traj_pl.set_data(px, py)
             if self.icon_artist is not None:
-                  self.icon_artist.update(state)
+                  self.icon_artist.update(state, control=control)
             else:
                   self.pos_pl.set_data([state[0]], [state[1]])
 

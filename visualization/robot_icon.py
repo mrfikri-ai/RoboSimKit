@@ -19,7 +19,7 @@ class RobotIconArtist:
     else:
       raise ValueError("mode is not in the list")
 
-  def update(self, robot_state):
+  def update(self, robot_state, control=None):
     px, py, th = robot_state[0], robot_state[1], robot_state[2]
 
     scale = self.scale
@@ -41,6 +41,11 @@ class RobotIconArtist:
       axle_offset = 0.08 * scale
       track = 0.08 * scale
 
+      # Steering angle (front wheels). If not provided, render straight.
+      delta = 0.0
+      if control is not None and len(control) >= 2:
+        delta = float(control[1])
+
       # Wheel centers: front/rear x left/right
       wheel_centers = []
       for s_axle in (+1.0, -1.0):
@@ -48,6 +53,11 @@ class RobotIconArtist:
           cx = px + s_axle * axle_offset * hx + s_side * (track / 2.0) * lx
           cy = py + s_axle * axle_offset * hy + s_side * (track / 2.0) * ly
           wheel_centers.append((cx, cy))
+
+      # Wheel angles: rear wheels aligned with body, front wheels steered by delta.
+      # Order matches wheel_centers creation:
+      #   0 front-left, 1 front-right, 2 rear-left, 3 rear-right
+      wheel_angles = [th + delta, th + delta, th, th]
 
       ar_st = [px, py]
       ar_d = (arrow_size*np.cos(th), arrow_size*np.sin(th))
@@ -71,14 +81,14 @@ class RobotIconArtist:
           scale_units="xy", scale=1, color="b", width=0.1*arrow_size
         )
 
-        for i, (cx, cy) in enumerate(wheel_centers):
+        for i, ((cx, cy), ang) in enumerate(zip(wheel_centers, wheel_angles)):
           rect = plt.Rectangle(
             (cx - wheel_len / 2, cy - wheel_wid / 2),
             wheel_len,
             wheel_wid,
             color="k",
           )
-          rect.set_transform(Affine2D().rotate_around(cx, cy, th) + self.ax.transData)
+          rect.set_transform(Affine2D().rotate_around(cx, cy, ang) + self.ax.transData)
           self.moro_patch[2+i] = self.ax.add_patch(rect)
       else:
         chassis = self.moro_patch[0]
@@ -88,10 +98,10 @@ class RobotIconArtist:
         self.moro_patch[1].set_offsets(ar_st)
         self.moro_patch[1].set_UVC(ar_d[0], ar_d[1])
 
-        for i, (cx, cy) in enumerate(wheel_centers):
+        for i, ((cx, cy), ang) in enumerate(zip(wheel_centers, wheel_angles)):
           wheel = self.moro_patch[2+i]
           wheel.set_xy((cx - wheel_len / 2, cy - wheel_wid / 2))
-          wheel.set_transform(Affine2D().rotate_around(cx, cy, th) + self.ax.transData)
+          wheel.set_transform(Affine2D().rotate_around(cx, cy, ang) + self.ax.transData)
 
       return
 

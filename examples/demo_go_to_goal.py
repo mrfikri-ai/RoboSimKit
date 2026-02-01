@@ -85,7 +85,7 @@ def controller_unicycle(goal, state):
     v = k_rho * rho
     omega = k_alpha * alpha
 
-    if rho < 0.03:
+    if rho < 0.01:
         v = 0.0
         omega = 0.0
 
@@ -157,7 +157,7 @@ def run():
         if SHOW_2D:
             vis.update_time_stamp(t)
             vis.update_goal(goal_state)
-            vis.update_trajectory(state_hist[:it+1])
+            vis.update_trajectory(state_hist[:it+1], control=u)
             plt.pause(1e-3)
 
     return state_hist, goal_hist, u_hist
