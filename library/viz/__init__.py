@@ -1,1 +1,1 @@
-"RoboSimKit visualization"
+# RoboSimKit visualization package
