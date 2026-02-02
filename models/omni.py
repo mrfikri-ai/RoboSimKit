@@ -2,9 +2,7 @@
 from __future__ import annotations
 import numpy as np
 
-def wrap_angle(theta: float) -> float:
-    """Wrap angle to (-pi, pi]."""
-    return (theta + np.pi) % (2.0 * np.pi) - np.pi
+from utils.angles import wrap_angle
 
 def step(state, control, dt: float, wrap: bool = False) -> np.ndarray:
     """

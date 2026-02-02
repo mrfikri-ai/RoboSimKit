@@ -1,26 +1,11 @@
 """Ackermann (car-like) kinematic model using bicycle approximation.
-
-State:   [x, y, theta]
-Control: [v, delta] where delta is the steering angle (front wheel)
-
-Continuous-time model:
-  x_dot     = v * cos(theta)
-  y_dot     = v * sin(theta)
-  theta_dot = (v / L) * tan(delta)
-
-This module intentionally does NOT clip/saturate inputs. If you want steering
-limits, do it in the controller.
 """
 
 from __future__ import annotations
 
 import numpy as np
 
-
-def wrap_angle(theta: float) -> float:
-    """Wrap angle to (-pi, pi]."""
-    return (theta + np.pi) % (2.0 * np.pi) - np.pi
-
+from utils.angles import wrap_angle
 
 def step(state, control, dt: float, *, L: float = 0.3, wrap: bool = False) -> np.ndarray:
     """Discrete-time Euler integration step for the bicycle model."""

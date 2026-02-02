@@ -17,7 +17,7 @@ from controllers import controller_ackermann, controller_omni, controller_unicyc
 # ----------------------------
 # Choose robot type here
 # ----------------------------
-MODE = "omnidirectional"          # "unicycle", "omnidirectional", or "ackermann"
+MODE = "ackermann"          # "unicycle", "omnidirectional", or "ackermann"
 SHOW_2D = True
 
 # Simulation settings
@@ -25,7 +25,7 @@ Ts = 0.01
 t_max = 10.0
 
 # Initial state and goal (state = [px, py, theta])
-init_state = np.array([0.0, 0.0, np.pi/2])
+init_state = np.array([-2.0, -1.5, 0.0])
 goal_state = np.array([1.5, 1.0, 0.0])
 
 # Visualization field limits
@@ -36,14 +36,31 @@ field_y = (-2.0, 2.0)
 def run():
     sim_iter = int(t_max / Ts) + 1
 
+    if MODE == "unicycle":
+        u_dim = 2
+        controller = controller_unicycle
+        step = unicycle_step
+        wrap = wrap_u
+    elif MODE == "ackermann":
+        u_dim = 2
+        controller = controller_ackermann
+        step = lambda s, u, ts: ackermann_step(s, u, ts, L=0.3)
+        wrap = wrap_a
+    elif MODE == "omnidirectional":
+        u_dim = 3
+        controller = controller_omni
+        step = omni_step
+        wrap = wrap_o
+    else:
+        raise ValueError(
+            "Invalid MODE. Expected 'unicycle', 'omnidirectional', or 'ackermann'."
+        )
+
     state = init_state.copy()
     state_hist = np.zeros((sim_iter, 3))
     goal_hist = np.zeros((sim_iter, 3))
 
-    if MODE in ("unicycle", "ackermann"):
-        u_hist = np.zeros((sim_iter, 2))
-    else:
-        u_hist = np.zeros((sim_iter, 3))
+    u_hist = np.zeros((sim_iter, u_dim))
 
     # Visualization
     if SHOW_2D:
@@ -58,21 +75,10 @@ def run():
         state_hist[it] = state
         goal_hist[it] = goal_state
 
-        if MODE == "unicycle":
-            u = controller_unicycle(goal_state, state)
-            u_hist[it] = u
-            state = unicycle_step(state, u, Ts)
-            state[2] = wrap_u(state[2])
-        elif MODE == "ackermann":
-            u = controller_ackermann(goal_state, state)
-            u_hist[it] = u
-            state = ackermann_step(state, u, Ts, L=0.3)
-            state[2] = wrap_a(state[2])
-        else:
-            u = controller_omni(goal_state, state)
-            u_hist[it] = u
-            state = omni_step(state, u, Ts)
-            state[2] = wrap_o(state[2])
+        u = controller(goal_state, state)
+        u_hist[it] = u
+        state = step(state, u, Ts)
+        state[2] = wrap(state[2])
 
         if SHOW_2D:
             vis.update_time_stamp(t)

@@ -28,8 +28,6 @@ def controller_ackermann(
     """control = [v, delta] (velocity, steering angle).
 
     Simple go-to-goal controller:
-    - v drives forward proportional to distance
-    - delta steers toward the goal direction
     """
     x, y, th = state
     gx, gy, _ = goal

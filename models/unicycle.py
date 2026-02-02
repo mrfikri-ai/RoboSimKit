@@ -1,11 +1,7 @@
 # library/models/unicycle.py
 import numpy as np
 
-
-def wrap_angle(theta: float) -> float:
-    """Ensure theta within (-pi, pi]. Same as your code."""
-    return ((theta + np.pi) % (2.0 * np.pi)) - np.pi
-
+from utils.angles import wrap_angle
 
 def B_unicycle(theta: float) -> np.ndarray:
     return np.array([
