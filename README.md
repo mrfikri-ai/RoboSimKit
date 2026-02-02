@@ -32,11 +32,28 @@ From **any location**, just run the example file directly:
 python examples/demo_go_to_goal.py
 ```
 
-Figure-8 trajectory tracking (reference path + robot trajectory):
+
+## Creating New Examples (Template)
+
+To start creating the examples from the template:
+
+1) Copy the file:
 
 ```bash
-python examples/demo_follow_figure8.py
+python -c "import shutil; shutil.copy('examples/demo_template.py','examples/demo_my_algorithm.py')"
 ```
+
+2) In your new file, implement:
+
+- `compute_control(goal_state, state, t)`  (your algorithm)
+- optionally `get_goal(t)` (time-varying reference)
+
+The template standardizes:
+
+- **Input parameters** (MODE, Ts, t_max, init_state, goal)
+- **Visualization** using `visualization/plotter2d.py`
+- **History logging** (`state_hist`, `goal_hist`, `u_hist`)
+- **Plots** (control inputs vs time, and states vs time)
 
 Or in VS Code: open `examples/demo_go_to_goal.py` and click **Run Python File**.
 

@@ -8,16 +8,19 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from visualization.plotter2d import MobileRobotPlotter2D
-from models.unicycle import step as unicycle_step, wrap_angle as wrap_u
-from models.omni import step as omni_step, wrap_angle as wrap_o
-from models.ackermann import step as ackermann_step, wrap_angle as wrap_a
+from controllers import constant_goal, compute_go_to_goal_control, plot_standard_results, select_model
 
-from controllers import controller_ackermann, controller_omni, controller_unicycle
+
+"""Go-to-goal demo (standardized example structure).
+
+Edit parameters at the top of the file, then run:
+    python examples/demo_go_to_goal.py
+"""
 
 # ----------------------------
 # Choose robot type here
 # ----------------------------
-MODE = "ackermann"          # "unicycle", "omnidirectional", or "ackermann"
+MODE = "omnidirectional"          # "unicycle", "omnidirectional", or "ackermann"
 SHOW_2D = True
 
 # Simulation settings
@@ -26,7 +29,10 @@ t_max = 10.0
 
 # Initial state and goal (state = [px, py, theta])
 init_state = np.array([-2.0, -1.5, 0.0])
-goal_state = np.array([1.5, 1.0, 0.0])
+goal_state_0 = np.array([1.5, 1.0, 0.0])
+
+# Ackermann wheelbase used by the kinematic model
+L_ACK = 0.3
 
 # Visualization field limits
 field_x = (-2.5, 2.5)
@@ -36,25 +42,8 @@ field_y = (-2.0, 2.0)
 def run():
     sim_iter = int(t_max / Ts) + 1
 
-    if MODE == "unicycle":
-        u_dim = 2
-        controller = controller_unicycle
-        step = unicycle_step
-        wrap = wrap_u
-    elif MODE == "ackermann":
-        u_dim = 2
-        controller = controller_ackermann
-        step = lambda s, u, ts: ackermann_step(s, u, ts, L=0.3)
-        wrap = wrap_a
-    elif MODE == "omnidirectional":
-        u_dim = 3
-        controller = controller_omni
-        step = omni_step
-        wrap = wrap_o
-    else:
-        raise ValueError(
-            "Invalid MODE. Expected 'unicycle', 'omnidirectional', or 'ackermann'."
-        )
+    get_goal = constant_goal(goal_state_0)
+    u_dim, step_fn, wrap_fn = select_model(MODE, L_ack=L_ACK)
 
     state = init_state.copy()
     state_hist = np.zeros((sim_iter, 3))
@@ -64,21 +53,22 @@ def run():
 
     # Visualization
     if SHOW_2D:
-        use_icon = MODE in ("unicycle", "omnidirectional", "ackermann")
-        vis = MobileRobotPlotter2D(mode=MODE, use_icon=use_icon)
+        vis = MobileRobotPlotter2D(mode=MODE, use_icon=True)
         vis.set_field(field_x, field_y)
-        vis.show_goal(goal_state)
+        vis.show_goal(get_goal(0.0))
 
     for it in range(sim_iter):
         t = it * Ts
 
+        goal_state = get_goal(t)
+
         state_hist[it] = state
         goal_hist[it] = goal_state
 
-        u = controller(goal_state, state)
+        u = compute_go_to_goal_control(MODE, goal_state, state)
         u_hist[it] = u
-        state = step(state, u, Ts)
-        state[2] = wrap(state[2])
+        state = step_fn(state, u, Ts)
+        state[2] = wrap_fn(state[2])
 
         if SHOW_2D:
             vis.update_time_stamp(t)
@@ -91,36 +81,5 @@ def run():
 
 if __name__ == "__main__":
     state_hist, goal_hist, u_hist = run()
-    t = np.arange(len(state_hist)) * Ts
-
-    # Plot inputs
-    plt.figure()
-    if MODE == "unicycle":
-        plt.plot(t, u_hist[:, 0], label="v [m/s]")
-        plt.plot(t, u_hist[:, 1], label="omega [rad/s]")
-    elif MODE == "ackermann":
-        plt.plot(t, u_hist[:, 0], label="v [m/s]")
-        plt.plot(t, np.rad2deg(u_hist[:, 1]), label="delta [deg]")
-    else:
-        plt.plot(t, u_hist[:, 0], label="vx [m/s]")
-        plt.plot(t, u_hist[:, 1], label="vy [m/s]")
-        plt.plot(t, u_hist[:, 2], label="omega [rad/s]")
-    plt.xlabel("t [s]")
-    plt.ylabel("control input")
-    plt.grid(True)
-    plt.legend()
-
-    # Plot states
-    plt.figure()
-    plt.plot(t, state_hist[:, 0], label="px [m]")
-    plt.plot(t, state_hist[:, 1], label="py [m]")
-    plt.plot(t, state_hist[:, 2], label="theta [rad]")
-    plt.plot(t, goal_hist[:, 0], ":", label="goal px")
-    plt.plot(t, goal_hist[:, 1], ":", label="goal py")
-    plt.plot(t, goal_hist[:, 2], ":", label="goal theta")
-    plt.xlabel("t [s]")
-    plt.ylabel("state")
-    plt.grid(True)
-    plt.legend()
-
+    plot_standard_results(mode=MODE, Ts=Ts, state_hist=state_hist, goal_hist=goal_hist, u_hist=u_hist)
     plt.show()
