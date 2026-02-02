@@ -22,7 +22,7 @@ def wrap_angle(theta: float) -> float:
     return (theta + np.pi) % (2.0 * np.pi) - np.pi
 
 
-def step(state, control, dt: float, *, L: float = 0.3, wrap: bool = True) -> np.ndarray:
+def step(state, control, dt: float, *, L: float = 0.3, wrap: bool = False) -> np.ndarray:
     """Discrete-time Euler integration step for the bicycle model."""
     state = np.asarray(state, dtype=float).reshape(-1)
     control = np.asarray(control, dtype=float).reshape(-1)

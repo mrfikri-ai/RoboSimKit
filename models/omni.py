@@ -6,7 +6,7 @@ def wrap_angle(theta: float) -> float:
     """Wrap angle to (-pi, pi]."""
     return (theta + np.pi) % (2.0 * np.pi) - np.pi
 
-def step(state, control, dt: float, wrap: bool = True) -> np.ndarray:
+def step(state, control, dt: float, wrap: bool = False) -> np.ndarray:
     """
     Omnidirectional model as a single integrator.
     """

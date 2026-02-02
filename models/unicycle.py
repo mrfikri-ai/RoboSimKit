@@ -15,7 +15,7 @@ def B_unicycle(theta: float) -> np.ndarray:
     ], dtype=float)
 
 
-def step(state, control, dt: float, *, wrap: bool = True) -> np.ndarray:
+def step(state, control, dt: float, *, wrap: bool = False) -> np.ndarray:
     # Update new state of the robot at time-step t+1
     # using discrete-time model of UNICYCLE model
     state = np.asarray(state, dtype=float).reshape(3,)
