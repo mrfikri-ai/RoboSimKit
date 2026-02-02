@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Callable, Tuple
+from typing import Callable
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -9,7 +9,7 @@ from models.unicycle import step as unicycle_step, wrap_angle as wrap_u
 from models.omni import step as omni_step, wrap_angle as wrap_o
 from models.ackermann import step as ackermann_step, wrap_angle as wrap_a
 
-from .go_to_goal import controller_ackermann, controller_omni, controller_unicycle
+from .go_to_goal import controller_pose_p
 
 
 GoalFn = Callable[[float], np.ndarray]
@@ -27,16 +27,9 @@ def constant_goal(goal_state: np.ndarray) -> GoalFn:
 
 
 def compute_go_to_goal_control(mode: str, goal_state: np.ndarray, state: np.ndarray) -> np.ndarray:
-    """Compute control input using the built-in go-to-goal controllers."""
+    """Compute control input using the single proportional pose controller."""
 
-    if mode == "unicycle":
-        return controller_unicycle(goal_state, state)
-    if mode == "ackermann":
-        return controller_ackermann(goal_state, state)
-    if mode == "omnidirectional":
-        return controller_omni(goal_state, state)
-
-    raise ValueError("Invalid MODE. Expected 'unicycle', 'omnidirectional', or 'ackermann'.")
+    return controller_pose_p(mode, goal_state, state)
 
 
 def select_model(mode: str, *, L_ack: float = 0.3):
