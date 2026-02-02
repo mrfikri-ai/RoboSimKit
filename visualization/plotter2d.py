@@ -8,8 +8,9 @@ from .robot_icon import RobotIconArtist
 
 class MobileRobotPlotter2D:
       def __init__(self, mode=None, use_icon=True):
-            self.fig = plt.figure(1)
-            self.ax = plt.gca()
+            # Create a fresh figure each time. Reusing a fixed figure number can
+            # accumulate artists across multiple runs and make the icon look wrong.
+            self.fig, self.ax = plt.subplots()
             self.ax.set(xlabel="x [m]", ylabel="y [m]")
             self.ax.set_aspect("equal", adjustable="box", anchor="C")
             plt.tight_layout()

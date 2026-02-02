@@ -10,6 +10,11 @@ class RobotIconArtist:
     self.scale = scale
     self.moro_patch = None
 
+    # Visual style
+    self.body_color = "orange"
+    self.body_alpha = 1.0
+    self.arrow_color = "orange"
+
     if mode == "omnidirectional":
       self.icon_id = 3
     elif mode == "unicycle":
@@ -71,14 +76,15 @@ class RobotIconArtist:
           (px - car_length / 2, py - car_width / 2),
           car_length,
           car_width,
-          color="#AAAAAAAA",
+          color=self.body_color,
+          alpha=self.body_alpha,
         )
         chassis.set_transform(Affine2D().rotate_around(px, py, th) + self.ax.transData)
         self.moro_patch[0] = self.ax.add_patch(chassis)
 
         self.moro_patch[1] = plt.quiver(
           ar_st[0], ar_st[1], ar_d[0], ar_d[1],
-          scale_units="xy", scale=1, color="b", width=0.1*arrow_size
+          scale_units="xy", scale=1, color=self.arrow_color, width=0.1*arrow_size
         )
 
         for i, ((cx, cy), ang) in enumerate(zip(wheel_centers, wheel_angles)):
@@ -125,9 +131,11 @@ class RobotIconArtist:
 
     if self.moro_patch is None:
       self.moro_patch = [None] * (2 + len(wheel_angles))
-      self.moro_patch[0] = self.ax.add_patch(plt.Circle((px, py), body_rad, color="#AAAAAAAA"))
+      self.moro_patch[0] = self.ax.add_patch(
+        plt.Circle((px, py), body_rad, color=self.body_color, alpha=self.body_alpha)
+      )
       self.moro_patch[1] = plt.quiver(ar_st[0], ar_st[1], ar_d[0], ar_d[1],
-                  scale_units="xy", scale=1, color="b", width=0.1*arrow_size)
+                  scale_units="xy", scale=1, color=self.arrow_color, width=0.1*arrow_size)
       for i, ((cx, cy), ang) in enumerate(zip(wheel_centers, wheel_angles)):
         rect = plt.Rectangle(
           (cx - wheel_size[0] / 2, cy - wheel_size[1] / 2),

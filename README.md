@@ -9,9 +9,15 @@ Inspired by [FunMoRo_control](https://github.com/TUNI-IINES/FunMoRo_control), or
 RoboSimKit/
 ├── examples/          # Demo scripts
 │   ├── demo_go_to_goal.py
-│   └── demo_follow_figure8.py
+│   ├── demo_follow_figure8.py
+│   ├── demo_dwa_unicycle.py
+│   └── demo_template.py
 ├── controllers/       # Control laws
-│   └── go_to_goal.py
+│   ├── __init__.py
+│   ├── go_to_goal.py
+│   ├── demo_utils.py
+│   ├── follow_figure8.py
+│   └── (more controllers...)
 ├── models/            # Robot kinematic models
 │   ├── ackermann.py
 │   ├── unicycle.py
@@ -32,6 +38,13 @@ From **any location**, just run the example file directly:
 python examples/demo_go_to_goal.py
 ```
 
+Other demos:
+
+```bash
+python examples/demo_follow_figure8.py
+python examples/demo_dwa_unicycle.py
+```
+
 
 ## Creating New Examples (Template)
 
@@ -43,10 +56,19 @@ To start creating the examples from the template:
 python -c "import shutil; shutil.copy('examples/demo_template.py','examples/demo_my_algorithm.py')"
 ```
 
-2) In your new file, implement:
+2) In your new file, set these callables:
 
-- `compute_control(goal_state, state, t)`  (your algorithm)
-- optionally `get_goal(t)` (time-varying reference)
+- `get_goal` (default is already a constant-goal callable)
+- `compute_control` (recommended: import it from a controller module)
+
+Example pattern:
+
+```python
+from controllers.my_controller import compute_control
+# optionally:
+# from controllers import constant_goal
+# get_goal = constant_goal(goal_state_0)
+```
 
 The template standardizes:
 

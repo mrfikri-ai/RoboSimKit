@@ -15,7 +15,7 @@ from controllers import follow_figure8_step, figure8_goal, plot_standard_results
 # ----------------------------
 # Choose robot type here
 # ----------------------------
-MODE = "unicycle"  # "unicycle", "omnidirectional", or "ackermann"
+MODE = "omnidirectional"  # "unicycle", "omnidirectional", or "ackermann"
 SHOW_2D = True
 
 # Simulation settings
