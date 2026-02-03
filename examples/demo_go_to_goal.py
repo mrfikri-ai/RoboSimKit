@@ -1,21 +1,16 @@
 import os
 import sys
 
-# Ensure repo root is on path so imports work when running this file directly.
+# This setting is to allow imports from the parent directory
+# Any suggestion to change this?
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 import numpy as np
 import matplotlib.pyplot as plt
 
 from visualization.plotter2d import MobileRobotPlotter2D
-from controllers import constant_goal, compute_go_to_goal_control, plot_standard_results, select_model
+from controllers import constant_goal, controller_pose_p, plot_standard_results, select_model
 
-
-"""Go-to-goal demo (standardized example structure).
-
-Edit parameters at the top of the file, then run:
-    python examples/demo_go_to_goal.py
-"""
 
 # ----------------------------
 # Choose robot type here
@@ -65,7 +60,7 @@ def run():
         state_hist[it] = state
         goal_hist[it] = goal_state
 
-        u = compute_go_to_goal_control(MODE, goal_state, state)
+        u = controller_pose_p(MODE, goal_state, state)
         u_hist[it] = u
         state = step_fn(state, u, Ts)
         state[2] = wrap_fn(state[2])

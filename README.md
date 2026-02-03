@@ -1,7 +1,7 @@
 # RoboSimKit
 
 RoboSimKit is a lightweight simulator for learning robotics.  
-Inspired by [FunMoRo_control](https://github.com/TUNI-IINES/FunMoRo_control), originally developed by **Made Widhi Surya Atman** from the Intelligent Networked Systems (IINES) Group, Tampere University.
+Inspired by [FunMoRo_control](https://github.com/TUNI-IINES/FunMoRo_control), which was originally developed by **Made Widhi Surya Atman** from the Intelligent Networked Systems (IINES) Group, Tampere University, this RoboSimKit is extended version for easy learning platform.
 
 ## Project Structure
 
@@ -15,8 +15,8 @@ RoboSimKit/
 ├── controllers/       # Control laws
 │   ├── __init__.py
 │   ├── go_to_goal.py
-│   ├── demo_utils.py
-│   ├── follow_figure8.py
+│   ├── sim_utils.py
+│   ├── trajectory_generator.py
 │   └── (more controllers...)
 ├── models/            # Robot kinematic models
 │   ├── ackermann.py
@@ -130,14 +130,15 @@ MODE = "unicycle"          # or "omnidirectional" or "ackermann"
 ## Notes on Models vs Controllers
 
 - `models/` contains the kinematic update for some robotic models.
-- `controllers/` contains control laws used by examples (e.g., go-to-goal).
-- `controllers/go_to_goal.py` defines `controller_unicycle`, `controller_omni`, and `controller_ackermann`. The examples import them via `controllers/__init__.py`.
-- Angle wrapping is handled explicitly in the simulation scripts (FunMoRo_control style) and uses `utils/angles.py`. The model `step()` functions also support optional wrapping via a `wrap` flag, but the default is not to wrap.
+- `controllers/` contains control input (e.g., go-to-goal).
+- `controllers/go_to_goal.py` simple control input for go to goal using all defined models.
+- `controllers/trajectory_generator.py` contains reference generators (e.g., `figure8_goal`).
+- `controllers/sim_utils.py` contains demo/simulation helpers 
 
 ## Tuning
 
 In the figure-8 example you can tune feedback gains in one place:
-The basic control implementation for figure-8 is control + feedforward
+The controller is a simple proportional pose controller applied to a time-varying reference.
 
 ```python
 K_POS = 1.2

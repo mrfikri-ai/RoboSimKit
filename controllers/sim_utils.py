@@ -26,10 +26,7 @@ def constant_goal(goal_state: np.ndarray) -> GoalFn:
     return get_goal
 
 
-def compute_go_to_goal_control(mode: str, goal_state: np.ndarray, state: np.ndarray) -> np.ndarray:
-    """Compute control input using the single proportional pose controller."""
-
-    return controller_pose_p(mode, goal_state, state)
+compute_go_to_goal_control = controller_pose_p
 
 
 def select_model(mode: str, *, L_ack: float = 0.3):

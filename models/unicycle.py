@@ -17,9 +17,6 @@ def step(state, control, dt: float, *, wrap: bool = False) -> np.ndarray:
     state = np.asarray(state, dtype=float).reshape(3,)
     control = np.asarray(control, dtype=float).reshape(2,)
 
-    if dt <= 0:
-        raise ValueError("dt must be > 0")
-
     theta = state[2]
     B = B_unicycle(theta)
 

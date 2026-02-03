@@ -2,10 +2,10 @@
 """
 
 from .go_to_goal import controller_ackermann, controller_omni, controller_pose_p, controller_unicycle
-from .demo_utils import constant_goal, compute_go_to_goal_control, plot_standard_results, select_model
-from .follow_figure8 import (
+from .sim_utils import constant_goal, compute_go_to_goal_control, plot_standard_results, select_model
+from .trajectory_generator import (
     figure8_goal,
-    follow_figure8_step,
+    track_reference_step,
 )
 
 __all__ = [
@@ -18,5 +18,5 @@ __all__ = [
     "plot_standard_results",
     "select_model",
     "figure8_goal",
-    "follow_figure8_step",
+    "track_reference_step",
 ]

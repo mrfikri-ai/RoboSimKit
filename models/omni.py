@@ -11,13 +11,6 @@ def step(state, control, dt: float, wrap: bool = False) -> np.ndarray:
     state = np.asarray(state, dtype=float).reshape(-1)
     control = np.asarray(control, dtype=float).reshape(-1)
 
-    if state.size != 3:
-        raise ValueError(f"state must be length 3 [x,y,theta], got {state.size}")
-    if control.size != 3:
-        raise ValueError(f"control must be length 3 [vx,vy,w], got {control.size}")
-    if dt <= 0:
-        raise ValueError("dt must be > 0")
-    
     next_state = state + control * dt
 
     if wrap:

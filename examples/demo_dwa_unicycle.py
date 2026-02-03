@@ -1,7 +1,6 @@
 import os
 import sys
 
-# Ensure repo root is on path so imports work when running this file directly.
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 import math
@@ -14,12 +13,9 @@ from controllers import plot_standard_results
 from models.unicycle import step as unicycle_step
 from utils.angles import wrap_angle
 
-"""Dynamic Window Approach (DWA) demo (standardized example structure).
+"""Dynamic Window Approach (DWA) demo.
 
 This demo is intentionally self-contained so other algorithms can copy the structure.
-
-Run:
-    python examples/demo_dwa_unicycle.py
 """
 
 
@@ -71,8 +67,6 @@ obstacles_xy = np.array(
 obstacle_r = 0.6
 
 # Kinematic constraints.
-# Note: the original script uses very fine sampling (0.01 m/s and 1 deg).
-# For an interactive demo, we default to slightly coarser sampling so it runs fast.
 cfg = {
     "max_v": 1.0,
     "max_w": math.radians(20.0),
@@ -98,11 +92,6 @@ field_y = (-1.0, 11.0)
 
 def motion_model(x5: np.ndarray, u: np.ndarray, dt: float) -> np.ndarray:
     """Unicycle motion model with velocity states.
-
-    x5 = [x, y, theta, v, w]
-    u  = [v_cmd, w_cmd]
-
-    We treat (v, w) as the applied command for the next step.
     """
     x5 = np.asarray(x5, dtype=float).reshape(5)
     u = np.asarray(u, dtype=float).reshape(2)

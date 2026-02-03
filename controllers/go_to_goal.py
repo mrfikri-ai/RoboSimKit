@@ -5,7 +5,7 @@ import numpy as np
 from utils.angles import wrap_angle
 
 
-# Default controller gains (override by passing parameters).
+# Default controller gains.
 ACKERMANN_K_V = 1.0
 ACKERMANN_K_DELTA = 1.5
 
@@ -27,9 +27,8 @@ def controller_pose_p(
 ) -> np.ndarray:
     """Single proportional pose controller.
 
-    Given current pose state=[x, y, theta] and goal=[gx, gy, gtheta], compute a
-    proportional control command for the selected kinematic model:
-
+    Args:
+      - mode:           "unicycle", "ackermann", or "omnidirectional"
       - unicycle:        u=[v, omega]
       - ackermann:       u=[v, delta]
       - omnidirectional: u=[vx, vy, omega] (WORLD frame)
@@ -38,7 +37,7 @@ def controller_pose_p(
       - k_pos controls position error response
       - k_theta controls heading error response
 
-    If gains are not provided, per-model defaults are used.
+    Use default gains if k_pos or k_theta is None.
     """
 
     mode = str(mode)
@@ -60,7 +59,7 @@ def controller_pose_p(
 
         v = kp * rho
 
-        # Smoothly gate omega to 0 as rho -> 0 (avoids a hard stop `if`).
+        # Smoothly gate omega to 0 as rho -> 0.
         eps = 1e-9
         omega = kth * alpha * (rho / (rho + eps))
         return np.array([v, omega], dtype=float)

@@ -1,12 +1,17 @@
 from __future__ import annotations
 
+from typing import Callable
+
 import numpy as np
 
 from .go_to_goal import controller_pose_p
 
 
+ReferenceFn = Callable[[float], np.ndarray]
+
+
 def figure8_goal(t: float, *, A: float, B: float, w: float) -> np.ndarray:
-    """Return reference state [px, py, theta] at time t."""
+    """Return a figure-8-like reference state [px, py, theta] at time t."""
     x = A * np.sin(w * t)
     y = 0.5 * B * np.sin(2.0 * w * t)
 
@@ -17,30 +22,36 @@ def figure8_goal(t: float, *, A: float, B: float, w: float) -> np.ndarray:
     return np.array([x, y, theta_d], dtype=float)
 
 
-def follow_figure8_step(
+def track_reference_step(
     mode: str,
     state: np.ndarray,
     t: float,
     *,
-    A: float,
-    B: float,
-    w: float,
+    get_reference: ReferenceFn,
     K_POS: float,
     K_THETA: float,
     L_ack: float = 0.3,
 ) -> tuple[np.ndarray, np.ndarray]:
-    """Return (desired_state, u) at time t for figure-8 tracking.
+    """Return (reference_state, u) at time t for arbitrary reference tracking.
 
-    Uses the single proportional pose controller (no separate tracking controller).
+    The reference is provided by get_reference(t) -> [px, py, theta].
+    Control uses the single proportional pose controller.
     """
 
-    desired_state = figure8_goal(t, A=A, B=B, w=w)
+    reference_state = np.asarray(get_reference(float(t)), dtype=float).reshape(3)
     u = controller_pose_p(
         mode,
-        desired_state,
+        reference_state,
         state,
         k_pos=K_POS,
         k_theta=K_THETA,
         L_ack=L_ack,
     )
-    return desired_state, u
+    return reference_state, u
+
+
+__all__ = [
+    "ReferenceFn",
+    "figure8_goal",
+    "track_reference_step",
+]

@@ -1,4 +1,5 @@
 """Ackermann (car-like) kinematic model using bicycle approximation.
+This Ackerman model is still under development to verify its correctness mathematically.
 """
 
 from __future__ import annotations
@@ -11,15 +12,6 @@ def step(state, control, dt: float, *, L: float = 0.3, wrap: bool = False) -> np
     """Discrete-time Euler integration step for the bicycle model."""
     state = np.asarray(state, dtype=float).reshape(-1)
     control = np.asarray(control, dtype=float).reshape(-1)
-
-    if state.size != 3:
-        raise ValueError(f"state must be length 3 [x,y,theta], got {state.size}")
-    if control.size != 2:
-        raise ValueError(f"control must be length 2 [v,delta], got {control.size}")
-    if dt <= 0:
-        raise ValueError("dt must be > 0")
-    if L <= 0:
-        raise ValueError("wheelbase L must be > 0")
 
     x, y, theta = state
     v, delta = control

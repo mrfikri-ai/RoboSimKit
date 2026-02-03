@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 
 from visualization.plotter2d import MobileRobotPlotter2D
 
-from controllers import follow_figure8_step, figure8_goal, plot_standard_results, select_model
+from controllers import track_reference_step, figure8_goal, plot_standard_results, select_model
 
 
 # ----------------------------
@@ -66,13 +66,11 @@ def run():
     for it in range(sim_iter):
         t = it * Ts
 
-        desired_state, u = follow_figure8_step(
+        desired_state, u = track_reference_step(
             MODE,
             state,
             t,
-            A=A,
-            B=B,
-            w=w,
+            get_reference=(lambda ti: figure8_goal(ti, A=A, B=B, w=w)),
             K_POS=K_POS,
             K_THETA=K_THETA,
             L_ack=L_ACK,
