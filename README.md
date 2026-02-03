@@ -38,37 +38,6 @@ From **any location**, just run the example file directly:
 python examples/demo_go_to_goal.py
 ```
 
-Other demos:
-
-```bash
-python examples/demo_follow_figure8.py
-python examples/demo_dwa_unicycle.py
-```
-
-
-## Creating New Examples (Template)
-
-To start creating the examples from the template:
-
-1) Copy the file:
-
-```bash
-python -c "import shutil; shutil.copy('examples/demo_template.py','examples/demo_my_algorithm.py')"
-```
-
-2) In your new file, set these callables:
-
-- `get_goal` (default is already a constant-goal callable)
-- `compute_control` (recommended: import it from a controller module)
-
-Example pattern:
-
-```python
-from controllers.my_controller import compute_control
-# optionally:
-# from controllers import constant_goal
-# get_goal = constant_goal(goal_state_0)
-```
 
 The template standardizes:
 
@@ -77,9 +46,8 @@ The template standardizes:
 - **History logging** (`state_hist`, `goal_hist`, `u_hist`)
 - **Plots** (control inputs vs time, and states vs time)
 
-Or in VS Code: open `examples/demo_go_to_goal.py` and click **Run Python File**.
 
-## Go-to-goal (demo_go_to_goal.py)
+## Example: Go-to-goal (demo_go_to_goal.py)
 
 This demo simulates a robot moving from an initial pose to a goal pose using a simple go-to-goal controller.
 
@@ -135,15 +103,6 @@ MODE = "unicycle"          # or "omnidirectional" or "ackermann"
 - `controllers/trajectory_generator.py` contains reference generators (e.g., `figure8_goal`).
 - `controllers/sim_utils.py` contains demo/simulation helpers 
 
-## Tuning
-
-In the figure-8 example you can tune feedback gains in one place:
-The controller is a simple proportional pose controller applied to a time-varying reference.
-
-```python
-K_POS = 1.2
-K_THETA = 3.0
-```
 
 ## Author
 
