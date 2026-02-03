@@ -22,6 +22,26 @@ def figure8_goal(t: float, *, A: float, B: float, w: float) -> np.ndarray:
     return np.array([x, y, theta_d], dtype=float)
 
 
+def figure8_twist(t: float, *, A: float, B: float, w: float) -> np.ndarray:
+    """Return feedforward twist [vx, vy, omega] for the figure-8 reference.
+
+    vx, vy are in WORLD frame.
+    omega is the time-derivative of theta_d from :func:`figure8_goal`.
+    """
+
+    x_d = A * w * np.cos(w * t)
+    y_d = B * w * np.cos(2.0 * w * t)
+
+    x_dd = -A * (w**2) * np.sin(w * t)
+    y_dd = -2.0 * B * (w**2) * np.sin(2.0 * w * t)
+
+    # d/dt atan2(y_d, x_d) = (x_d*y_dd - y_d*x_dd) / (x_d^2 + y_d^2)
+    denom = float(x_d**2 + y_d**2)
+    omega = (x_d * y_dd - y_d * x_dd) / (denom + 1e-12)
+
+    return np.array([x_d, y_d, omega], dtype=float)
+
+
 def track_reference_step(
     mode: str,
     state: np.ndarray,
@@ -53,5 +73,6 @@ def track_reference_step(
 __all__ = [
     "ReferenceFn",
     "figure8_goal",
+    "figure8_twist",
     "track_reference_step",
 ]

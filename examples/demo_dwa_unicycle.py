@@ -8,10 +8,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from visualization.plotter2d import MobileRobotPlotter2D
-from controllers import controller_unicycle
+from controllers import DetectObstacle, controller_unicycle
 from controllers import plot_standard_results
 from models.unicycle import step as unicycle_step
 from utils.angles import wrap_angle
+from utils.rangesensor import get_range_scan
+from utils.rangesensor import compute_sensor_endpoints
 
 """Dynamic Window Approach (DWA) demo.
 
@@ -24,7 +26,18 @@ This demo is intentionally self-contained so other algorithms can copy the struc
 # ----------------------------
 Ts = 0.1  # [s] controller + simulation step
 SHOW_2D = True
+SHOW_SENSOR = True
 MAX_STEPS = 1000
+
+# Range sensor settings (used only when SHOW_SENSOR=True)
+SENSING_RANGE = 3.0
+SENSOR_RESOLUTION = np.pi / 12
+
+# Which obstacle source DWA should use:
+# - "global": use the known obstacle list (best for this toy map).
+# - "range_sensor": use only the currently observed scan hits (more realistic; can be
+#   faster for many obstacles, but may need a larger SENSING_RANGE).
+DWA_OBS_SOURCE = "global"
 
 # Goal stopping / near-goal behavior.
 # Note: with discrete time (DT) and finite velocity sampling (cfg['v_reso']), the robot may
@@ -38,7 +51,7 @@ GOAL_SWITCH_RADIUS = 0.8
 init_x5 = np.array([0.0, 0.0, math.pi / 2.0, 0.0, 0.0], dtype=float)
 
 # Goal position and goal state (used by go-to-goal fallback)
-goal_xy = np.array([8.0, 6.0], dtype=float)
+goal_xy = np.array([8.0, 3.0], dtype=float)
 goal_state_0 = np.array([goal_xy[0], goal_xy[1], 0.0], dtype=float)
 
 # Obstacle positions list [x, y]
@@ -58,6 +71,7 @@ obstacles_xy = np.array(
         [6, 3],
         [6, 8],
         [6, 6],
+        [6, 7],
         [7, 4],
     ],
     dtype=float,
@@ -65,6 +79,28 @@ obstacles_xy = np.array(
 
 # Obstacle radius for collision detection
 obstacle_r = 0.6
+
+
+def _build_obstacle_polylines(obstacles_xy: np.ndarray, r: float) -> list[np.ndarray]:
+    """Approximate each circular obstacle as an axis-aligned square boundary."""
+    polylines: list[np.ndarray] = []
+    for ox, oy in np.asarray(obstacles_xy, dtype=float):
+        rr = float(r)
+        square = np.array(
+            [
+                [ox - rr, oy - rr],
+                [ox + rr, oy - rr],
+                [ox + rr, oy + rr],
+                [ox - rr, oy + rr],
+                [ox - rr, oy - rr],
+            ],
+            dtype=float,
+        )
+        polylines.append(square)
+    return polylines
+
+
+_OBSTACLE_POLYLINES = _build_obstacle_polylines(obstacles_xy, obstacle_r)
 
 # Kinematic constraints.
 cfg = {
@@ -155,17 +191,31 @@ def heading_score(x5_end: np.ndarray, goal_xy: np.ndarray) -> float:
     return math.pi - abs(err)
 
 
-def obstacle_distance_score(x5_end: np.ndarray, obstacles_xy: np.ndarray, r: float) -> float:
-    """Return minimum clearance to obstacles (capped), higher is better."""
-    pos = x5_end[:2].reshape(2, 1)
-    if obstacles_xy.size == 0:
-        return 2.0 * r
+def obstacle_distance_score(
+    traj_pose: np.ndarray,
+    obstacles_xy: np.ndarray,
+    r: float,
+    *,
+    dist_cap: float,
+) -> float:
+    """Return minimum clearance to obstacles along the trajectory, higher is better."""
+    traj_pose = np.asarray(traj_pose, dtype=float)
+    if traj_pose.ndim != 2 or traj_pose.shape[1] < 2:
+        raise ValueError("traj_pose must be an array of shape (N, >=2)")
 
-    dists = np.linalg.norm(obstacles_xy.T - pos, axis=0) - r
+    if obstacles_xy is None:
+        obstacles_xy = np.zeros((0, 2), dtype=float)
+    obstacles_xy = np.asarray(obstacles_xy, dtype=float).reshape(-1, 2)
+
+    if obstacles_xy.size == 0:
+        return float(dist_cap)
+
+    traj_xy = traj_pose[:, :2]
+    diff = traj_xy[:, None, :] - obstacles_xy[None, :, :]
+    dists = np.linalg.norm(diff, axis=2) - float(r)
     dist = float(np.min(dists))
 
-    # Cap to avoid overweighting obstacle-free trajectories.
-    return min(dist, 2.0 * r)
+    return min(dist, float(dist_cap))
 
 
 def braking_distance(v: float, cfg: dict, dt: float) -> float:
@@ -205,7 +255,12 @@ def dwa_control(
             x_end, traj = generate_trajectory(x5, float(v), float(w), eval_w["predict_time"], dt)
 
             h = heading_score(x_end, goal_xy)
-            dist = obstacle_distance_score(x_end, obstacles_xy, obstacle_r)
+
+            # Use minimum clearance along the predicted trajectory.
+            # Cap uses the sensing range (if available) so that obstacle-free candidates
+            # don't dominate this term.
+            dist_cap = float(max(SENSING_RANGE, 2.0 * obstacle_r, 1e-6))
+            dist = obstacle_distance_score(traj, obstacles_xy, obstacle_r, dist_cap=dist_cap)
             vel = abs(float(v))
             goal_dist = float(np.linalg.norm(x_end[:2] - goal_xy))
             to_goal = 1.0 / (goal_dist + 1e-9)
@@ -249,13 +304,32 @@ def compute_control(x5: np.ndarray, t: float) -> tuple[np.ndarray, np.ndarray]:
         u = controller_unicycle(goal_state, x5[:3])
         best_traj = np.asarray([x5[:3].copy()], dtype=float)
     else:
+        # Optionally plan using only obstacles the robot can currently observe.
+        # We use scan *endpoints* on obstacle boundaries, so the effective obstacle
+        # radius for distance checks becomes ~0 (the boundary is already inflated).
+        dwa_obstacles_xy = obstacles_xy
+        dwa_obstacle_r = obstacle_r
+        if DWA_OBS_SOURCE == "range_sensor":
+            pose = x5[:3]
+            scan = get_range_scan(
+                pose,
+                _OBSTACLE_POLYLINES,
+                sensing_range=SENSING_RANGE,
+                sensor_resolution=SENSOR_RESOLUTION,
+            )
+            endpoints = compute_sensor_endpoints(pose, scan, sensor_resolution=SENSOR_RESOLUTION)
+
+            hit = scan < (SENSING_RANGE - 1e-9)
+            dwa_obstacles_xy = endpoints[hit]
+            dwa_obstacle_r = 0.0
+
         u, best_traj = dwa_control(
             x5,
             cfg,
             goal_xy,
             eval_w,
-            obstacles_xy,
-            obstacle_r,
+            dwa_obstacles_xy,
+            dwa_obstacle_r,
             Ts,
         )
 
@@ -278,6 +352,13 @@ def run():
     goal_hist = [goal_state.copy()]
     u_hist = [np.zeros(2, dtype=float)]
 
+    detector = None
+    if SHOW_SENSOR:
+        detector = DetectObstacle(detect_max_dist=SENSING_RANGE, angle_res_rad=SENSOR_RESOLUTION)
+
+        for poly in _OBSTACLE_POLYLINES:
+            detector.register_obstacle_bounded(poly)
+
     if SHOW_2D:
         vis = MobileRobotPlotter2D(mode="unicycle", use_icon=True)
         vis.set_field(field_x, field_y)
@@ -285,6 +366,11 @@ def run():
 
         vis.ax.plot(obstacles_xy[:, 0], obstacles_xy[:, 1], "*k", label="obstacles")
         pred_line, = vis.ax.plot([], [], "g--", linewidth=1.0, label="best prediction")
+
+        sensor_pl = None
+        if SHOW_SENSOR:
+            sensor_pl, = vis.ax.plot([], [], ".", color="k", markersize=3, label="range scan")
+
         vis.ax.legend(loc="upper left")
 
     for step_i in range(MAX_STEPS):
@@ -309,6 +395,13 @@ def run():
             vis.update_goal(goal_state)
             vis.update_trajectory(h, control=u)
             pred_line.set_data(best_traj[:, 0], best_traj[:, 1])
+
+            if SHOW_SENSOR:
+                pose = x[:3]
+                dist = detector.get_sensing_data(pose[0], pose[1], pose[2])
+                endpoints = compute_sensor_endpoints(pose, dist, sensor_resolution=SENSOR_RESOLUTION)
+                sensor_pl.set_data(endpoints[:, 0], endpoints[:, 1])
+
             plt.pause(1e-3)
 
     return (

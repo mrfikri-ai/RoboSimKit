@@ -9,7 +9,8 @@ import matplotlib.pyplot as plt
 
 from visualization.plotter2d import MobileRobotPlotter2D
 
-from controllers import constant_goal, plot_standard_results, select_model
+from controllers import DetectObstacle, constant_goal, plot_standard_results, select_model
+from utils.rangesensor import compute_sensor_endpoints
 
 
 """Example template for RoboSimKit demos.
@@ -34,6 +35,7 @@ How to use
 # ----------------------------
 MODE = "unicycle"  # "unicycle", "omnidirectional", or "ackermann"
 SHOW_2D = True
+SHOW_SENSOR = False
 
 Ts = 0.01
 t_max = 10.0
@@ -50,6 +52,13 @@ L_ACK = 0.3
 # Visualization field limits
 field_x = (-2.5, 2.5)
 field_y = (-2.0, 2.0)
+
+# Range sensor settings (used only when SHOW_SENSOR=True)
+SENSING_RANGE = 1.0
+SENSOR_RESOLUTION = np.pi / 8
+
+# Optional: register obstacle boundary vertices (N,2 or N,3). If None, scan shows max-range circle.
+OBSTACLE_VERTICES = None
 
 
 # Default goal function (constant). Replace with a function if you want a moving goal.
@@ -83,11 +92,25 @@ def run():
     goal_hist = np.zeros((sim_iter, 3), dtype=float)
     u_hist = np.zeros((sim_iter, u_dim), dtype=float)
 
+    detector = None
+    if SHOW_SENSOR:
+        detector = DetectObstacle(detect_max_dist=SENSING_RANGE, angle_res_rad=SENSOR_RESOLUTION)
+        if OBSTACLE_VERTICES is not None:
+            detector.register_obstacle_bounded(np.asarray(OBSTACLE_VERTICES, dtype=float))
+
     # Visualization
     if SHOW_2D:
         vis = MobileRobotPlotter2D(mode=MODE, use_icon=True)
         vis.set_field(field_x, field_y)
         vis.show_goal(get_goal(0.0))
+
+        sensor_pl = None
+        if SHOW_SENSOR:
+            sensor_pl, = vis.ax.plot([], [], ".", color="k", markersize=4, label="range scan")
+            if OBSTACLE_VERTICES is not None:
+                v = np.asarray(OBSTACLE_VERTICES, dtype=float)
+                vis.ax.plot(v[:, 0], v[:, 1], "--r", label="obstacle")
+            vis.ax.legend(loc="upper right")
 
     for it in range(sim_iter):
         t = it * Ts
@@ -98,6 +121,11 @@ def run():
 
         u = np.asarray(compute_control(goal_state, state, t), dtype=float).reshape(u_dim)
         u_hist[it] = u
+
+        if SHOW_2D and SHOW_SENSOR:
+            dist = detector.get_sensing_data(state[0], state[1], state[2])
+            endpoints = compute_sensor_endpoints(state, dist, sensor_resolution=SENSOR_RESOLUTION)
+            sensor_pl.set_data(endpoints[:, 0], endpoints[:, 1])
 
         state = step_fn(state, u, Ts)
         state[2] = wrap_fn(state[2])
