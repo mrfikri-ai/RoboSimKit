@@ -2,7 +2,7 @@ import os
 import sys
 
 # This setting is to allow imports from the parent directory
-# Any suggestion to change this?
+#Uncomment this sys line if you can find a better method
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 import numpy as np
